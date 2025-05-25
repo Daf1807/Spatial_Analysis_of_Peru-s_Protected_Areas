@@ -1,0 +1,128 @@
+import os
+print("Estás trabajando en esta carpeta:")
+print(os.getcwd())
+import osmnx as ox
+import geopandas as gpd
+import requests
+
+# Paso 1: Obtener el polígono del país Perú
+peru_gdf = ox.geocode_to_gdf('Peru')
+peru_polygon = peru_gdf.iloc[0].geometry
+
+# Paso 2: Descargar características desde Overpass API
+# Incluye los tags relevantes
+tags = {
+    'boundary': 'protected_area',
+    'leisure': 'nature_reserve',
+    'protect_class': True  # El valor True indica que queremos cualquier valor existente para esta key
+}
+
+# Extraer geometrías con los tags, dentro del polígono de Perú
+gdf = ox.features_from_polygon(peru_polygon, tags=tags)
+
+# Paso 3: Filtrar por clases específicas de áreas protegidas
+# Por ejemplo, parques nacionales y reservas forestales
+# protect_class valores típicos:
+# 1: Reservas estrictas, 2: Parques nacionales, 4: Reservas naturales, etc.
+filtered_gdf = gdf[gdf['protect_class'].isin(['2', '4', '6'])]  # Puedes añadir más códigos si es necesario
+
+# Asegúrate de que sea solo polígonos
+filtered_gdf = filtered_gdf[filtered_gdf.geometry.type.isin(['Polygon', 'MultiPolygon'])]
+
+# Paso 4: Guardar a archivo GeoPackage
+output_file = 'peru_protected_areas.gpkg'
+filtered_gdf.to_file(output_file, driver='GPKG')
+
+print(f"Guardado en {output_file}, total de áreas: {len(filtered_gdf)}")
+
+import geopandas as gpd
+
+gdf = gpd.read_file('peru_protected_areas.gpkg')
+print(gdf.head())
+
+# Mostrar solo los nombres únicos de las áreas protegidas
+nombres_unicos = filtered_gdf['name'].dropna().unique()
+print(nombres_unicos)
+
+import osmnx as ox
+import geopandas as gpd
+import requests
+
+# Paso 1: Obtener el polígono del país Perú
+peru_gdf = ox.geocode_to_gdf('Peru')
+peru_polygon = peru_gdf.iloc[0].geometry
+
+# Paso 2: Descargar características desde Overpass API
+# Incluye los tags relevantes
+tags = {
+    'boundary': 'protected_area',
+    'leisure': 'nature_reserve',
+    'protect_class': True  # El valor True indica que queremos cualquier valor existente para esta key
+}
+
+# Extraer geometrías con los tags, dentro del polígono de Perú
+gdf = ox.features_from_polygon(peru_polygon, tags=tags)
+
+# Paso 3: Filtrar por clases específicas de áreas protegidas
+# Por ejemplo, parques nacionales y reservas forestales
+# protect_class valores típicos:
+# 1: Reservas estrictas, 2: Parques nacionales, 4: Reservas naturales, etc.
+filtered_gdf = gdf[gdf['protect_class'].isin(['2', '4', '6'])]  # Puedes añadir más códigos si es necesario
+
+# Asegúrate de que sea solo polígonos
+filtered_gdf = filtered_gdf[filtered_gdf.geometry.type.isin(['Polygon', 'MultiPolygon'])]
+
+# Paso 4: Guardar a archivo GeoPackage
+output_file = 'peru_protected_areas.gpkg'
+filtered_gdf.to_file(output_file, driver='GPKG')
+
+print(f"Guardado en {output_file}, total de áreas: {len(filtered_gdf)}")
+
+import requests
+from bs4 import BeautifulSoup
+from getpass import getpass
+
+# 🔗 URL base del directorio
+base_url = 'https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.061/2023.03.06/'
+
+# 🔐 Credenciales de Earthdata
+username = "dafnedaf18"
+password = "D*9!C8|yhAczwjY" 
+
+# Crear sesión con autenticación
+session = requests.Session()
+session.auth = (username, password)
+
+# Obtener HTML de la página
+response = session.get(base_url)
+if response.status_code != 200:
+    print(f"Error accediendo al sitio: {response.status_code}")
+    exit()
+
+# Parsear HTML para encontrar los enlaces
+soup = BeautifulSoup(response.text, 'html.parser')
+links = soup.find_all('a')
+
+# Filtrar solo los enlaces .hdf
+hdf_links = [link.get('href') for link in links if link.get('href', '').endswith('.hdf')]
+
+import os
+
+# Carpeta de destino
+output_folder = 'modis_data'
+os.makedirs(output_folder, exist_ok=True)
+
+# Descargar cada archivo .hdf
+for link in hdf_links:
+    file_url = base_url + link
+    print(f"Descargando {link}...")
+    file_response = session.get(file_url, stream=True)
+
+    # 👉 Guardar en carpeta
+    with open(os.path.join(output_folder, link), 'wb') as f:
+        for chunk in file_response.iter_content(chunk_size=8192):
+            f.write(chunk)
+
+    print(f"Guardado: {link}")
+
+print("✅ Descargas completadas.")
